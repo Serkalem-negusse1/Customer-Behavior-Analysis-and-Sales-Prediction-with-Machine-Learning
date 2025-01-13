@@ -1,0 +1,4 @@
+[core]
+    remote = yeneremote
+['remote "yeneremote"']
+    url = /path/to/local/storage
