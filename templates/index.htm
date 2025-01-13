@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Behavior Analysis and Sales Prediction Web API</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sales Prediction API</h1>
+            <p>Get predictions based on your store data!</p>
+        </header>
+
+        <section class="form-container">
+            <label for="store_id">Store ID:</label>
+            <input type="number" id="store_id" name="store_id" required>
+
+            <label for="day_of_week">Day of Week:</label>
+            <input type="number" id="day_of_week" name="day_of_week" required>
+
+            <label for="promo">Promo (0 or 1):</label>
+            <input type="number" id="promo" name="promo" required>
+
+            <button id="predictBtn" class="button">Get Prediction results</button>
+        </section>
+
+        <section class="result-container">
+            <p><strong>Random Forest Model Prediction:</strong> <span id="rfResult"></span></p>
+        </section>
+
+        <footer>
+            <p>Customer Behavior Analysis and Sales Predictions using Machine and Deep Learning</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
