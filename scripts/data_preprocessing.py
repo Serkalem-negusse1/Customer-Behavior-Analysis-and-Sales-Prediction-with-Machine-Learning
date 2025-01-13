@@ -3,6 +3,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import logging
+from sklearn.preprocessing import StandardScaler
 
 # Setup basic configuration for logging
 logging.basicConfig(level=logging.INFO, 
@@ -135,7 +136,6 @@ def visualize_missing_data(df: pd.DataFrame, dataset_name: str):
     else:
         logging.info(f"No missing values in {dataset_name}.")
 
-
 def visualize_outliers(df: pd.DataFrame, cols: list, dataset_name: str):
     """Visualize outliers in the specified columns using box plots."""
     logging.info(f"Visualizing outliers for {dataset_name}.")
@@ -154,16 +154,70 @@ def visualize_outliers(df: pd.DataFrame, cols: list, dataset_name: str):
     plt.suptitle(f'Outlier Visualization for {dataset_name}', y=1.02)
     plt.show()
 
-def preprocess_and_visualize(file_path: str):
+def preprocess_data(train_df: pd.DataFrame, test_df: pd.DataFrame, store_df: pd.DataFrame) -> tuple:
+    """
+    Preprocess the datasets including handling missing values, outliers, and feature engineering.
+    
+    Args:
+        train_df (pd.DataFrame): Training data.
+        test_df (pd.DataFrame): Test data.
+        store_df (pd.DataFrame): Store data.
+    
+    Returns:
+        tuple: (train_df, test_df, scaler)
+    """
+    # Handle missing values
+    train_df = handle_missing_values(train_df)
+    test_df = handle_missing_values(test_df)
+    store_df = handle_missing_values(store_df)
+    
+    # Handle outliers
+    numeric_cols = ['CompetitionDistance', 'Promo2SinceWeek', 'Promo2SinceYear']
+    train_df = cap_outliers(train_df, numeric_cols)
+    test_df = cap_outliers(test_df, numeric_cols)
+    store_df = cap_outliers(store_df, numeric_cols)
+    
+    # Feature extraction from 'Date' column
+    train_df['Date'] = pd.to_datetime(train_df['Date'])
+    test_df['Date'] = pd.to_datetime(test_df['Date'])
+
+    train_df['Weekday'] = train_df['Date'].dt.day_name()
+    test_df['Weekday'] = test_df['Date'].dt.day_name()
+
+    train_df['Weekend'] = train_df['Date'].dt.dayofweek.isin([5, 6]).astype(int)
+    test_df['Weekend'] = test_df['Date'].dt.dayofweek.isin([5, 6]).astype(int)
+
+    train_df['MonthSegment'] = pd.cut(train_df['Date'].dt.day, bins=[0, 10, 20, 31], labels=['beginning', 'mid', 'end'])
+    test_df['MonthSegment'] = pd.cut(test_df['Date'].dt.day, bins=[0, 10, 20, 31], labels=['beginning', 'mid', 'end'])
+
+    # Merge datasets
+    train_df = train_df.merge(store_df, on='Store', how='left')
+    test_df = test_df.merge(store_df, on='Store', how='left')
+
+    # Scale numeric features
+    numeric_cols = ['CompetitionDistance', 'Promo2SinceWeek', 'Promo2SinceYear']
+    scaler = StandardScaler()
+    train_df[numeric_cols] = scaler.fit_transform(train_df[numeric_cols])
+    test_df[numeric_cols] = scaler.transform(test_df[numeric_cols])
+
+    return train_df, test_df, scaler
+
+def preprocess_and_visualize(file_path: str, store_file_path: str):
     """Load, preprocess, and visualize the dataset."""
     data = load_data(file_path)
+    store_data = load_data(store_file_path)
+    
     data = preprocess_dates(data)
     data = handle_missing_values(data)
+    store_data = handle_missing_values(store_data)
 
     visualize_missing_data(data, 'Sales Data')
     numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
     visualize_outliers(data, numeric_cols, 'Sales Data')
     data = cap_outliers(data, numeric_cols)
 
+    # Train-Test-Split and Preprocessing
+    train_data, test_data, scaler = preprocess_data(data, data, store_data)
+
     logging.info("Preprocessing and visualization completed.")
-    return data
+    return train_data, test_data, scaler
