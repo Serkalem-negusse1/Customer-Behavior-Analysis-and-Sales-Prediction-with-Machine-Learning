@@ -9,9 +9,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 def load_data(file_path: str) -> pd.DataFrame:
-    """
-    Load data from a CSV file into a pandas DataFrame.
-    """
+    """Load data from a CSV file into a pandas DataFrame."""
     try:
         logging.info(f"Loading data from {file_path}.")
         df = pd.read_csv(file_path, encoding='utf-8', low_memory=False)
@@ -25,9 +23,7 @@ def load_data(file_path: str) -> pd.DataFrame:
         raise
 
 def preprocess_dates(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Convert date columns to datetime format.
-    """
+    """Convert date columns to datetime format."""
     logging.info("Converting applicable columns to datetime format.")
     date_cols = ['Date']
     for col in date_cols:
@@ -40,9 +36,7 @@ def preprocess_dates(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Handle missing values in the dataset.
-    """
+    """Handle missing values in the dataset."""
     logging.info("Handling missing values.")
     fill_methods = {
         'CompetitionDistance': 'median',
@@ -64,10 +58,14 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
             logging.info(f"Filled missing values in {col} using {method}.")
     return df
 
+def detect_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Detect missing values in the dataset and return a summary."""
+    missing_values = df.isnull().sum()
+    missing_percentage = (missing_values / len(df)) * 100
+    return pd.DataFrame({'Missing Values': missing_values, 'Percentage': missing_percentage})
+
 def detect_outliers(df: pd.DataFrame, cols: list, threshold: float = 1.5) -> pd.DataFrame:
-    """
-    Detect outliers in specified columns using the IQR method.
-    """
+    """Detect outliers in specified columns using the IQR method."""
     logging.info("Detecting outliers.")
     outlier_summary = {}
 
@@ -89,10 +87,23 @@ def detect_outliers(df: pd.DataFrame, cols: list, threshold: float = 1.5) -> pd.
 
     return pd.DataFrame.from_dict(outlier_summary, orient='index')
 
+def outlier_detection(df: pd.DataFrame, cols: list, threshold: float = 1.5) -> dict:
+    """Detect outliers in specified columns using the IQR method and return details."""
+    logging.info("Performing outlier detection.")
+    outliers = {}
+    for col in cols:
+        if col in df.columns:
+            Q1 = df[col].quantile(0.25)
+            Q3 = df[col].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - threshold * IQR
+            upper_bound = Q3 + threshold * IQR
+            outliers[col] = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
+            logging.info(f"Detected outliers in {col}.")
+    return outliers
+
 def cap_outliers(df: pd.DataFrame, cols: list, threshold: float = 1.5) -> pd.DataFrame:
-    """
-    Cap outliers in specified columns to the IQR range.
-    """
+    """Cap outliers in specified columns to the IQR range."""
     logging.info("Capping outliers.")
     for col in cols:
         if col in df.columns:
@@ -106,9 +117,7 @@ def cap_outliers(df: pd.DataFrame, cols: list, threshold: float = 1.5) -> pd.Dat
     return df
 
 def visualize_missing_data(df: pd.DataFrame, dataset_name: str):
-    """
-    Visualize missing values as a bar plot.
-    """
+    """Visualize missing values as a bar plot."""
     logging.info(f"Visualizing missing data for {dataset_name}.")
     missing = df.isnull().sum()
     missing_percent = 100 * missing / len(df)
@@ -126,10 +135,9 @@ def visualize_missing_data(df: pd.DataFrame, dataset_name: str):
     else:
         logging.info(f"No missing values in {dataset_name}.")
 
+
 def visualize_outliers(df: pd.DataFrame, cols: list, dataset_name: str):
-    """
-    Visualize outliers in the specified columns using box plots.
-    """
+    """Visualize outliers in the specified columns using box plots."""
     logging.info(f"Visualizing outliers for {dataset_name}.")
     n_cols = 2
     n_rows = (len(cols) + n_cols - 1) // n_cols
@@ -147,9 +155,7 @@ def visualize_outliers(df: pd.DataFrame, cols: list, dataset_name: str):
     plt.show()
 
 def preprocess_and_visualize(file_path: str):
-    """
-    Load, preprocess, and visualize the dataset.
-    """
+    """Load, preprocess, and visualize the dataset."""
     data = load_data(file_path)
     data = preprocess_dates(data)
     data = handle_missing_values(data)
