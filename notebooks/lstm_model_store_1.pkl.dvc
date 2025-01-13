@@ -1,0 +1,5 @@
+outs:
+- md5: 7b3d34a593e0ca882fc63ffd7d83415c
+  size: 1374511
+  hash: md5
+  path: lstm_model_store_1.pkl

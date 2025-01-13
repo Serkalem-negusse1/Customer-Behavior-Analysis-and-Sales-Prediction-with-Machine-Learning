@@ -1,0 +1,5 @@
+outs:
+- md5: d2a5114340b69b9ec501014af1b6b03a
+  size: 1023
+  hash: md5
+  path: scaler_store_1.pkl
